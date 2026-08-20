@@ -1,0 +1,30 @@
+/* App-level additions on top of the GlowVeda template stylesheets. */
+
+body.gv-app-body {
+  margin: 0;
+}
+
+main {
+  min-height: 60vh;
+}
+
+.hero {
+  background: var(--gradient-sand);
+  text-align: left;
+}
+
+.page-loading {
+  padding: 4rem 0;
+  text-align: center;
+  font-family: var(--font-body);
+}
+
+.product-card__image-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-section-alt);
+}
+
+nav#navbar {
+  position: relative;
+}

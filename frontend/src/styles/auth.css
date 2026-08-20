@@ -1,0 +1,1046 @@
+/* ============================================================
+   GlowVeda — Auth Pages Stylesheet (Login + Register)
+   login/login.css  — shared by login.html & register.html
+   Version: 1.0.0
+   ============================================================
+   TABLE OF CONTENTS:
+   01. Auth Body & Layout Root
+   02. Split-Screen Layout
+   03. Brand Panel (left / right)
+   04. Animated Blobs
+   05. Leaf Grid Decoration
+   06. Brand Content
+   07. Form Panel
+   08. Auth Card
+   09. Social Login Buttons
+   10. Divider
+   11. Auth Form Fields
+   12. Password Eye Toggle
+   13. Password Strength Bar
+   14. Remember Me / Terms Checkbox
+   15. Submit Button
+   16. Card Footer Link
+   17. Theme / RTL Controls
+   18. Register Perks List
+   19. Dark Mode Overrides
+   20. Responsive — Tablet & Mobile
+   ============================================================ */
+
+
+/* ============================================================
+   01. AUTH BODY & LAYOUT ROOT
+   ============================================================ */
+
+/* No scroll ever — lock the viewport */
+html,
+.auth-body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.auth-body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background: var(--bg-body);
+  color: var(--color-text-body);
+  -webkit-font-smoothing: antialiased;
+  /* Smooth theme transition */
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+}
+
+
+/* ============================================================
+   02. SPLIT-SCREEN LAYOUT
+   ============================================================ */
+
+.auth-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* brand | form */
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Register: form on left, brand on right */
+.auth-layout--register {
+  grid-template-columns: 1fr 1fr;  /* form | brand */
+}
+
+
+/* ============================================================
+   03. BRAND PANEL
+   ============================================================ */
+
+.auth-panel--brand {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  background: var(--gradient-hero, linear-gradient(145deg, #1a4a31 0%, #2f6f4e 50%, #6baf92 100%));
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+  padding: 2rem 1.5rem;
+  order: 1;
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+/* Tagline at bottom of brand panel */
+.auth-brand {
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.auth-panel__tagline {
+  position: absolute;
+  bottom: var(--space-3);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+
+/* ============================================================
+   04. ANIMATED BLOBS
+   ============================================================ */
+
+.auth-blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: blobFloat 8s ease-in-out infinite;
+}
+
+.auth-blob--1 {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(107, 175, 146, 0.35) 0%, transparent 70%);
+  top: -80px;
+  left: -80px;
+  animation-delay: 0s;
+}
+
+.auth-blob--2 {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(212, 168, 87, 0.25) 0%, transparent 70%);
+  bottom: 60px;
+  right: -60px;
+  animation-delay: -3s;
+}
+
+.auth-blob--3 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(168, 195, 160, 0.20) 0%, transparent 70%);
+  top: 40%;
+  left: 30%;
+  animation-delay: -6s;
+}
+
+@keyframes blobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(12px, -18px) scale(1.05); }
+  66%       { transform: translate(-8px, 12px) scale(0.95); }
+}
+
+
+/* ============================================================
+   05. LEAF GRID DECORATION
+   ============================================================ */
+
+.auth-leaf-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  pointer-events: none;
+  opacity: 0.08;
+  overflow: hidden;
+  padding: var(--space-4);
+  gap: var(--space-5);
+}
+
+.auth-leaf {
+  font-size: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: leafSway 6s ease-in-out infinite;
+  filter: grayscale(1) brightness(10);
+}
+
+.auth-leaf:nth-child(2) { animation-delay: -1s; }
+.auth-leaf:nth-child(3) { animation-delay: -2s; }
+.auth-leaf:nth-child(4) { animation-delay: -3s; }
+.auth-leaf:nth-child(5) { animation-delay: -4s; }
+.auth-leaf:nth-child(6) { animation-delay: -5s; }
+
+@keyframes leafSway {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  50%       { transform: rotate(8deg) scale(1.08); }
+}
+
+
+/* ============================================================
+   06. BRAND CONTENT
+   ============================================================ */
+
+.auth-brand {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+  animation: fadeInUp 0.8s ease both;
+}
+
+.auth-brand__logo {
+  height: 64px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  animation: float 5s ease-in-out infinite;
+}
+
+.auth-brand__quote {
+  max-width: 340px;
+  text-align: center;
+  margin: 0;
+}
+.auth-brand__quote p {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.35rem;
+  font-style: italic; font-weight: 300;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.55; margin-bottom: 10px;
+}
+.auth-brand__quote footer {
+  font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-accent, #d4a857);
+}
+
+/* Trust badges */
+.auth-trust {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.auth-trust__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: var(--font-medium);
+}
+
+.auth-trust__item svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+
+/* ============================================================
+   07. FORM PANEL
+   ============================================================ */
+
+.auth-panel--form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  overflow: hidden;
+  padding: var(--space-3);
+  position: relative;
+}
+
+/* Subtle pattern on form side */
+.auth-panel--form::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(47, 111, 78, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(212, 168, 87, 0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   08. AUTH CARD
+   ============================================================ */
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+  animation: fadeInUp 0.6s ease both;
+}
+
+/* Register card is slightly wider due to 2-col name row */
+.auth-card--register {
+  max-width: 440px;
+}
+
+/* Logo for mobile (brand panel hidden) */
+.auth-card__logo-mobile {
+  display: none;
+  margin-bottom: var(--space-3);
+}
+
+.auth-card__logo-mobile img {
+  height: 40px;
+  width: auto;
+}
+
+/* Header */
+.auth-card__header {
+  margin-bottom: var(--space-3);
+}
+
+.auth-card__header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-2xl), 3vw, var(--text-4xl));
+  font-weight: var(--font-semibold);
+  color: var(--color-text-heading);
+  line-height: var(--leading-tight);
+  margin-bottom: 6px;
+}
+
+.auth-card__header p {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-normal);
+}
+
+/* Card footer text */
+.auth-card__footer {
+  margin-top: var(--space-2);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.auth-switch-link {
+  color: var(--color-primary);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+  position: relative;
+  transition: color var(--transition-fast);
+}
+
+.auth-switch-link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-primary);
+  transition: width var(--transition-base);
+}
+
+.auth-switch-link:hover {
+  color: var(--color-primary-dark);
+}
+
+.auth-switch-link:hover::after {
+  width: 100%;
+}
+
+
+/* ============================================================
+   09. SOCIAL LOGIN BUTTONS
+   ============================================================ */
+
+.auth-social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: var(--space-2);
+}
+
+.auth-social__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: var(--border-width-2) solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-body);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-bounce);
+  white-space: nowrap;
+}
+
+.auth-social__btn:hover {
+  background: var(--bg-body);
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.auth-social__btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   10. DIVIDER
+   ============================================================ */
+
+.auth-divider {
+  position: relative;
+  text-align: center;
+  margin: var(--space-2) 0;
+}
+
+.auth-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.auth-divider span {
+  position: relative;
+  background: var(--bg-surface);
+  padding: 0 12px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
+
+/* ============================================================
+   11. AUTH FORM FIELDS
+   ============================================================ */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Two-column name row */
+.auth-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Label */
+.auth-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-body);
+  line-height: 1;
+}
+
+/* Label row (for forgot password inline) */
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-forgot {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  transition: color var(--transition-fast);
+}
+
+.auth-forgot:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* Input wrapper (icon + input + eye) */
+.auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+/* The input itself */
+.auth-input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-body);
+  background: var(--bg-body);
+  border: var(--border-width-2) solid var(--border-color);
+  border-radius: var(--radius-lg);
+  outline: none;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.auth-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+.auth-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(47, 111, 78, 0.14);
+  background: var(--bg-surface);
+}
+
+.auth-input:focus + .auth-input-icon,
+.auth-input-wrap:focus-within .auth-input-icon {
+  color: var(--color-primary);
+}
+
+/* Error state */
+.auth-input.error {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.10);
+}
+
+/* Error message */
+.auth-error {
+  font-size: 11px;
+  color: var(--color-error);
+  font-weight: var(--font-medium);
+  min-height: 14px;
+  display: block;
+  transition: opacity var(--transition-fast);
+}
+
+/* Inline link in terms */
+.auth-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+
+/* ============================================================
+   12. PASSWORD EYE TOGGLE
+   ============================================================ */
+
+.auth-eye {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.auth-eye:hover {
+  color: var(--color-primary);
+}
+
+.auth-eye:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* Shift input right when eye button present */
+.auth-input-wrap .auth-input:has(+ .auth-eye),
+.auth-input-wrap .auth-input {
+  padding-right: 40px;
+}
+
+
+/* ============================================================
+   13. PASSWORD STRENGTH BAR
+   ============================================================ */
+
+.auth-strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.auth-strength__bar {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.auth-strength__seg {
+  flex: 1;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-light);
+  transition: background var(--transition-base);
+}
+
+/* Strength levels — JS adds class to .auth-strength */
+.auth-strength[data-level="1"] .auth-strength__seg[data-seg="0"] { background: var(--color-error); }
+
+.auth-strength[data-level="2"] .auth-strength__seg[data-seg="0"],
+.auth-strength[data-level="2"] .auth-strength__seg[data-seg="1"] { background: var(--color-warning); }
+
+.auth-strength[data-level="3"] .auth-strength__seg[data-seg="0"],
+.auth-strength[data-level="3"] .auth-strength__seg[data-seg="1"],
+.auth-strength[data-level="3"] .auth-strength__seg[data-seg="2"] { background: var(--color-herbal-yellow); }
+
+.auth-strength[data-level="4"] .auth-strength__seg { background: var(--color-success); }
+
+.auth-strength__label {
+  font-size: 11px;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  min-width: 48px;
+  transition: color var(--transition-fast);
+}
+
+.auth-strength[data-level="1"] .auth-strength__label { color: var(--color-error); }
+.auth-strength[data-level="2"] .auth-strength__label { color: var(--color-warning); }
+.auth-strength[data-level="3"] .auth-strength__label { color: var(--color-herbal-yellow); }
+.auth-strength[data-level="4"] .auth-strength__label { color: var(--color-success); }
+
+
+/* ============================================================
+   14. REMEMBER ME / TERMS CHECKBOX
+   ============================================================ */
+
+.auth-remember,
+.auth-terms {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.auth-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+  user-select: none;
+}
+
+/* Hide native checkbox */
+.auth-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Custom checkbox */
+.auth-check-custom {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: var(--border-width-2) solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+  position: relative;
+}
+
+/* Checked state via sibling selector */
+.auth-checkbox:checked + .auth-check-custom {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.auth-checkbox:checked + .auth-check-custom::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.auth-checkbox:focus-visible + .auth-check-custom {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   15. SUBMIT BUTTON
+   ============================================================ */
+
+.auth-submit {
+  width: 100%;
+  padding: 12px 24px;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-white);
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background var(--transition-base),
+    transform var(--transition-bounce),
+    box-shadow var(--transition-base);
+  margin-top: 4px;
+}
+
+.auth-submit::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
+}
+
+.auth-submit:hover::before {
+  left: 100%;
+}
+
+.auth-submit:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(47, 111, 78, 0.35);
+}
+
+.auth-submit:active {
+  transform: translateY(0);
+}
+
+.auth-submit:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
+/* ============================================================
+   16. THEME / RTL CONTROLS
+   ============================================================ */
+
+.auth-controls {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-sticky);
+  display: flex;
+  gap: 8px;
+}
+
+.auth-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--color-text-body);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-bounce);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  font-family: var(--font-body);
+}
+
+.auth-ctrl-btn:hover {
+  background: var(--color-sand);
+  border-color: var(--color-secondary);
+  color: var(--color-primary);
+  transform: scale(1.08);
+}
+
+.auth-ctrl-btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   17. REGISTER — PERKS LIST
+   ============================================================ */
+
+.auth-perks {
+  text-align: left;
+  max-width: 340px;
+}
+
+.auth-perks__title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: var(--space-2);
+  line-height: var(--leading-snug);
+}
+
+.auth-perks__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.auth-perk {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  animation: fadeInUp 0.6s ease both;
+}
+
+.auth-perk:nth-child(1) { animation-delay: 0.1s; }
+.auth-perk:nth-child(2) { animation-delay: 0.2s; }
+.auth-perk:nth-child(3) { animation-delay: 0.3s; }
+.auth-perk:nth-child(4) { animation-delay: 0.4s; }
+
+.auth-perk__icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.auth-perk strong {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 2px;
+}
+
+.auth-perk p {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.6);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+
+/* ============================================================
+   18. SHARED KEYFRAMES (supplement global.css)
+   ============================================================ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+
+/* ============================================================
+   19. DARK MODE OVERRIDES
+   ============================================================ */
+
+[data-theme="dark"] .auth-panel--form {
+  background: var(--bg-surface);
+}
+
+[data-theme="dark"] .auth-social__btn {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--color-text-body);
+}
+
+[data-theme="dark"] .auth-social__btn:hover {
+  background: var(--bg-section-alt);
+}
+
+[data-theme="dark"] .auth-input {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--color-text-body);
+}
+
+[data-theme="dark"] .auth-input:focus {
+  background: var(--bg-surface);
+}
+
+[data-theme="dark"] .auth-divider span {
+  background: var(--bg-surface);
+}
+
+[data-theme="dark"] .auth-check-custom {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .auth-ctrl-btn {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .auth-panel--form::before {
+  opacity: 0.5;
+}
+
+
+/* ============================================================
+   20. RESPONSIVE — TABLET & MOBILE
+   ============================================================ */
+
+/* Tablet: hide brand panel, full-width form */
+@media (max-width: 900px) {
+  .auth-layout,
+  .auth-layout--register {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide brand panel on tablet / mobile */
+  .auth-panel--brand {
+    display: none;
+  }
+
+  /* Form panel takes full width */
+  .auth-panel--form {
+    overflow-y: auto; /* allow scroll only on small screens if needed */
+    -webkit-overflow-scrolling: touch;
+    padding: var(--space-4) var(--space-3);
+    align-items: flex-start;
+    padding-top: 72px; /* room for the controls */
+  }
+
+  .auth-card,
+  .auth-card--register {
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Show logo inside card on mobile */
+  .auth-card__logo-mobile {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* Mobile: tighten spacing */
+@media (max-width: 480px) {
+  .auth-panel--form {
+    padding: 64px var(--space-2) var(--space-3);
+  }
+
+  .auth-card__header h1 {
+    font-size: var(--text-3xl);
+  }
+
+  .auth-social {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-controls {
+    top: 12px;
+    right: 12px;
+  }
+}
+.auth-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ALWAYS keep brand left, form right */
+.auth-panel--brand {
+  order: 1;
+}
+
+.auth-panel--form {
+  order: 2;
+}
