@@ -1,0 +1,820 @@
+#navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-sticky);
+  height: var(--nav-height);
+  background: var(--bg-nav);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: background var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+#navbar.scrolled {
+  border-bottom-color: var(--border-color-soft);
+  box-shadow: 0 2px 20px rgba(30, 61, 43, 0.08);
+}
+
+/* ============================================================ 02. NAVBAR INNER LAYOUT ============================================================ */
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+  gap: var(--space-2);
+}
+
+/* Logo: left | Nav: center (flex-grow) | Actions: right */
+.navbar-logo {
+  flex-shrink: 0;
+}
+
+.navbar-nav {
+  flex: 1;
+  justify-content: center;
+}
+
+.navbar-actions {
+  flex-shrink: 0;
+}
+
+/* ============================================================ 03. LOGO ============================================================ */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+
+
+[data-theme="dark"] .navbar-logo img {
+  filter: none !important;
+}
+
+/* ============================================================ 04. DESKTOP NAV LINKS ============================================================ */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 18px;
+}
+
+.nav-item {
+  position: relative;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 18px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-body);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.nav-link:hover {
+  color: var(--color-primary);
+  background: rgba(47, 111, 78, 0.08);
+}
+/* Dark mode */
+[data-theme="dark"] .nav-link:hover {
+  color: white;
+  background: var(--color-primary);
+}
+/* Active indicator dot */
+.nav-link.active {
+  position: relative;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: 99px;
+}
+
+/* Chevron icon on dropdown triggers */
+.nav-chevron {
+  transition: transform var(--transition-base);
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.nav-item--dropdown:hover .nav-chevron,
+.nav-item--dropdown.open .nav-chevron {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* ============================================================ 05. DROPDOWN MENU ============================================================ */
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  /* gap below nav link */
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 240px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color-soft);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 48px rgba(30, 61, 43, 0.14);
+  padding: 8px;
+  z-index: var(--z-dropdown);
+  /* Hidden by default */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(6px);
+  transition: opacity 200ms ease, transform 200ms ease, visibility 200ms ease;
+}
+
+/* Wide dropdown for Services & Blog (2-column grid) */
+.nav-dropdown--wide {
+  min-width: 480px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+/* ── HOVER INTENT: keep dropdown open while cursor travels to it ── */
+/* The extra invisible "bridge" below the trigger fills the gap */
+.nav-item--dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: -20px;
+  right: -20px;
+  height: 20px;
+  /* bridges the 10px gap + extra safety */
+  background: transparent;
+}
+
+/* Show on hover of LI (covers both trigger & bridge & dropdown itself) */
+.nav-item--dropdown:hover .nav-dropdown,
+.nav-item--dropdown.open .nav-dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Arrow/caret above dropdown */
+.nav-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-color-soft);
+  border-top: 1px solid var(--border-color-soft);
+  border-radius: 2px 0 0 0;
+  rotate: 45deg;
+}
+
+/* Individual dropdown link */
+.nav-dropdown__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--color-text-body);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.nav-dropdown__link:hover {
+  background: rgba(47, 111, 78, 0.07);
+  color: var(--color-primary);
+}
+[data-theme="dark"] .nav-dropdown__link:hover {
+  background: var(--color-primary);
+}
+/* "All Articles" last link — slightly accented */
+.nav-dropdown__link--all {
+  border-top: 1px solid var(--border-color-soft);
+  margin-top: 4px;
+  padding-top: 12px;
+  color: var(--color-primary);
+}
+
+.nav-dropdown__link--all:hover {
+  background: rgba(47, 111, 78, 0.10);
+}
+
+/* Emoji icon */
+.nav-dropdown__icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-section-alt);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.nav-dropdown__link:hover .nav-dropdown__icon {
+  background: rgba(47, 111, 78, 0.12);
+}
+
+/* Text block */
+.nav-dropdown__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nav-dropdown__text strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-heading);
+  line-height: 1.3;
+}
+
+.nav-dropdown__text em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+.nav-dropdown__link:hover  {
+  color: var(--color-primary);
+}
+
+/* ============================================================ 06. RIGHT CONTROLS ============================================================ */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Shared icon-button style (theme + RTL) */
+.nav-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--color-text-body);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: var(--font-bold);
+  flex-shrink: 0;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-bounce);
+}
+
+.nav-ctrl-btn:hover {
+  background: var(--color-sand);
+  border-color: var(--color-secondary);
+  color: var(--color-primary);
+  transform: scale(1.06);
+}
+/* Dark mode */
+[data-theme="dark"] .nav-ctrl-btn:hover {
+  color: inherit;
+  background: inherit;
+}
+.nav-ctrl-btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Theme toggle spin on hover */
+.theme-toggle:hover {
+  transform: scale(1.06) rotate(18deg);
+}
+
+/* ============================================================ 07. NAV BUTTONS (Quote + Login) ============================================================ */
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-base), color var(--transition-base), border-color var(--transition-base), transform var(--transition-bounce), box-shadow var(--transition-base);
+  border: 2px solid transparent;
+}
+
+/* Get a Quote — accent filled */
+.nav-btn--quote {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.nav-btn--quote:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: var(--color-white);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(47, 111, 78, 0.30);
+}
+
+/* Login — outline */
+.nav-btn--login {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.nav-btn--login:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+  transform: translateY(-1px);
+}
+
+.nav-btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================ 08. HAMBURGER BUTTON ============================================================ */
+.nav-hamburger {
+  display: none;
+  /* hidden on desktop */
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: calc(var(--z-sticky) + 20);
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+.nav-hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--color-text-body);
+  border-radius: 99px;
+  transition: transform var(--transition-base), opacity var(--transition-base), width var(--transition-base);
+}
+
+/* Animated X when open */
+.nav-hamburger.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-hamburger.open span:nth-child(2) {
+  opacity: 0;
+  width: 0;
+}
+
+.nav-hamburger.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ============================================================ 09. MOBILE DRAWER ============================================================ */
+/* Backdrop overlay */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: calc(var(--z-sticky) + 5);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.mobile-nav-overlay.open {
+  display: block;
+  opacity: 1;
+}
+
+/* Drawer panel */
+.mobile-nav {
+  display: none;
+  /* toggled by JS */
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  left: 0;
+  background: var(--bg-surface);
+  z-index: calc(var(--z-sticky) + 10);
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.18);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.mobile-nav.open {
+  display: flex;
+  transform: translateX(0);
+}
+
+/* Drawer header */
+.mobile-nav__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color-soft);
+  flex-shrink: 0;
+}
+
+.mobile-nav__logo {
+  height: 36px;
+  width: auto;
+}
+
+[data-theme="dark"] .mobile-nav__logo {
+  filter: brightness(0) invert(1);
+}
+
+.mobile-nav__close {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--bg-body);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.mobile-nav__close:hover {
+  background: var(--color-error);
+  color: white;
+  border-color: var(--color-error);
+}
+
+/* Drawer scrollable body */
+.mobile-nav__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Drawer footer */
+.mobile-nav__footer {
+  padding: 16px;
+  border-top: 1px solid var(--border-color-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mobile-nav__controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+/* Hide desktop-only buttons on mobile */
+.hide-mobile-btn {
+  display: none;
+}
+
+/* ============================================================ 10. MOBILE ACCORDION SUB-MENUS ============================================================ */
+.mob-item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top-level mobile link — shared style for both <a> and <button> */
+.mob-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 13px 14px;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--color-text-body);
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.mob-link:hover {
+  background: rgba(47, 111, 78, 0.07);
+  color: var(--color-primary);
+}
+
+/* Parent toggle button */
+.mob-link--parent {
+  font-weight: var(--font-semibold);
+}
+
+.mob-link--parent[aria-expanded="true"] {
+  color: var(--color-primary);
+  background: rgba(47, 111, 78, 0.07);
+}
+
+/* Chevron rotation */
+.mob-chevron {
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+  opacity: 0.5;
+}
+
+.mob-link--parent[aria-expanded="true"] .mob-chevron {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* Sub-menu panel */
+.mob-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-left: 14px;
+}
+
+.mob-item--accordion[data-open="true"] .mob-sub {
+  max-height: 500px;
+  /* large enough for all items */
+}
+
+/* Sub-menu links */
+.mob-sub__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  border-left: 2px solid var(--border-color-soft);
+  margin-left: 6px;
+}
+
+.mob-sub__link:hover {
+  background: rgba(47, 111, 78, 0.07);
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+}
+
+/* ============================================================ 11. MOBILE FOOTER CONTROLS (inside drawer) ============================================================ */
+/* Reuse nav-btn styles — already defined above */
+/* Reuse nav-ctrl-btn styles — already defined above */
+/* ============================================================ 12. DARK MODE ============================================================ */
+[data-theme="dark"] #navbar {
+  background: var(--bg-nav);
+  /* already dark via variable */
+}
+
+[data-theme="dark"] .nav-dropdown {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-dropdown::before {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-dropdown__icon {
+  background: rgba(107, 175, 146, 0.10);
+}
+
+[data-theme="dark"] .mobile-nav {
+  background: var(--bg-card);
+}
+
+[data-theme="dark"] .mobile-nav-overlay {
+  background: rgba(0, 0, 0, 0.60);
+}
+
+[data-theme="dark"] .mob-link:hover {
+  background: rgba(107, 175, 146, 0.08);
+}
+
+[data-theme="dark"] .nav-ctrl-btn {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-btn--login {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-light);
+}
+
+[data-theme="dark"] .nav-btn--login:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* ============================================================ 13. RTL SUPPORT ============================================================ */
+[dir="rtl"] .navbar-inner {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .navbar-nav {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .navbar-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-dropdown {
+  left: auto;
+  right: 50%;
+  transform: translateX(50%) translateY(6px);
+}
+
+[dir="rtl"] .nav-item--dropdown:hover .nav-dropdown,
+[dir="rtl"] .nav-item--dropdown.open .nav-dropdown {
+  transform: translateX(50%) translateY(0);
+}
+
+[dir="rtl"] .mobile-nav {
+  transform: translateX(-100%);
+  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.18);
+}
+
+[dir="rtl"] .mobile-nav.open {
+  transform: translateX(0);
+}
+
+[dir="rtl"] .mob-sub {
+  padding-left: 0;
+  padding-right: 14px;
+}
+
+[dir="rtl"] .mob-sub__link {
+  border-left: none;
+  border-right: 2px solid var(--border-color-soft);
+  margin-left: 0;
+  margin-right: 6px;
+}
+
+[dir="rtl"] .mob-sub__link:hover {
+  border-right-color: var(--color-primary);
+}
+/* ============================================================
+   14. RESPONSIVE BREAKPOINTS
+   ============================================================ */
+
+/* ── Desktop ≥ 1100px: full nav visible ── */
+@media (min-width: 1100px) {
+  .nav-hamburger {
+    display: none !important;
+  }
+
+  .navbar-nav {
+    display: flex !important;
+  }
+
+  .hide-mobile-btn {
+    display: inline-flex !important;
+  }
+}
+
+
+/* ── Laptop 1024–1099px: mobile menu ── */
+@media (min-width: 1024px) and (max-width: 1099px) {
+  .navbar-nav {
+    display: none !important;
+  }
+
+  .hide-mobile-btn {
+    display: none !important;
+  }
+
+  .nav-hamburger {
+    display: flex !important;
+  }
+
+  .navbar-actions {
+    gap: 6px;
+  }
+}
+
+
+/* ── Tablet & Mobile < 1024px ── */
+@media (max-width: 1023px) {
+  .navbar-nav {
+    display: none !important;
+  }
+
+  .hide-mobile-btn {
+    display: none !important;
+  }
+
+  .nav-hamburger {
+    display: flex !important;
+  }
+
+  .navbar-actions {
+    gap: 6px;
+  }
+}
+
+
+/* ── Small mobile < 480px ── */
+@media (max-width: 479px) {
+  .navbar-inner {
+    padding-inline: 12px;
+  }
+
+  .navbar-logo img {
+    height: 36px;
+  }
+}/* ============================================================
+   MOBILE NAVBAR — TOGGLES BESIDE HAMBURGER
+   ============================================================ */
+
+@media (max-width: 1099px) {
+
+  .navbar-inner {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Push actions to the right */
+  .navbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* Keep toggles visible */
+  .navbar-actions .auth-ctrl-btn,
+  .navbar-actions .theme-toggle,
+  .navbar-actions .rtl-toggle {
+    display: flex;
+  }
+
+  /* Hamburger stays at the far right */
+  .nav-hamburger {
+    position: static;
+    display: flex !important;
+    flex-shrink: 0;
+  }
+}

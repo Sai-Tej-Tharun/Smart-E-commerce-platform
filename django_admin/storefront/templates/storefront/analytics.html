@@ -1,0 +1,209 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Analytics</h1>
+<p>Live counts from the <code>ecommerce_db</code> database — same tables fastapi_backend reads and writes.</p>
+
+<div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin:1.5rem 0;">
+  <div style="border:1px solid #ccc; border-radius:8px; padding:1rem; min-width:180px;">
+    <h3>Users</h3>
+    <p style="font-size:1.8rem; margin:0;">{{ total_users }}</p>
+    <p>{{ active_users }} active</p>
+    <ul>
+      {% for row in users_by_role %}
+        <li>{{ row.role }}: {{ row.count }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div style="border:1px solid #ccc; border-radius:8px; padding:1rem; min-width:180px;">
+    <h3>Products</h3>
+    <p style="font-size:1.8rem; margin:0;">{{ total_products }}</p>
+    <p>{{ out_of_stock }} out of stock &middot; {{ low_stock }} low stock (&le;5)</p>
+    <p>Inventory value: ₹{{ inventory_value|floatformat:2 }}</p>
+    {% if products_by_category %}
+    <ul>
+      {% for row in products_by_category %}
+        <li>{{ row.category }}: {{ row.count }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+
+  <div style="border:1px solid #ccc; border-radius:8px; padding:1rem; min-width:180px;">
+    <h3>Cart Activity</h3>
+    <p style="font-size:1.8rem; margin:0;">{{ total_cart_items }}</p>
+    <p>cart line items &middot; {{ total_units_in_carts }} total units</p>
+  </div>
+
+  <div style="border:1px solid #ccc; border-radius:8px; padding:1rem; min-width:180px;">
+    <h3>Orders</h3>
+    <p style="font-size:1.8rem; margin:0;">{{ total_orders }}</p>
+    <ul>
+      {% for row in orders_by_status %}
+        <li>{{ row.order_status }}: {{ row.count }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div style="border:1px solid #ccc; border-radius:8px; padding:1rem; min-width:180px;">
+    <h3>Revenue</h3>
+    <p style="font-size:1.8rem; margin:0;">₹{{ revenue_paid|floatformat:2 }}</p>
+    <p>from paid orders</p>
+    <p>₹{{ pending_payment_value|floatformat:2 }} still pending payment</p>
+  </div>
+
+  <div style="border:1px solid #ccc; border-radius:8px; padding:1rem; min-width:180px;">
+    <h3>Payments</h3>
+    <p style="font-size:1.8rem; margin:0;">{{ failed_payments }}</p>
+    <p>failed payments</p>
+    <ul>
+      {% for row in payments_by_status %}
+        <li>{{ row.status }}: {{ row.count }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<h3>Most-added products (by quantity in carts)</h3>
+{% if top_products %}
+<table>
+  <thead><tr><th>Product</th><th>Times added</th><th>Total quantity</th></tr></thead>
+  <tbody>
+    {% for row in top_products %}
+    <tr>
+      <td>{{ row.name }}</td>
+      <td>{{ row.times_added }}</td>
+      <td>{{ row.total_qty }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No cart activity yet.</p>
+{% endif %}
+
+<!-- ============================================================= -->
+<!-- NEW — Admin Panel Analytics & Reporting milestone             -->
+<!-- ============================================================= -->
+<hr style="margin:2rem 0;">
+<h2>Sales &amp; Revenue Charts</h2>
+
+<div style="display:flex; flex-wrap:wrap; gap:2rem; margin:1.5rem 0;">
+  <div style="flex:1; min-width:320px; max-width:600px;">
+    <h3>Revenue Trend (paid orders, by day)</h3>
+    {% if revenue_trend %}
+      <canvas id="revenueTrendChart" height="220"></canvas>
+    {% else %}
+      <p>No paid orders yet.</p>
+    {% endif %}
+  </div>
+
+  <div style="flex:1; min-width:320px; max-width:600px;">
+    <h3>Top-Selling Products (by revenue)</h3>
+    {% if top_selling_products %}
+      <canvas id="topSellingChart" height="220"></canvas>
+    {% else %}
+      <p>No paid orders yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<h3>Low Stock Alerts (&le;5 remaining)</h3>
+{% if low_stock_products %}
+<table>
+  <thead><tr><th>Product</th><th>Stock Remaining</th></tr></thead>
+  <tbody>
+    {% for p in low_stock_products %}
+    <tr style="background:#fff3cd;"><td>{{ p.name }}</td><td>{{ p.stock }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Nothing low on stock right now.</p>
+{% endif %}
+
+{% if out_of_stock_products %}
+<h3>Out of Stock</h3>
+<table>
+  <thead><tr><th>Product</th></tr></thead>
+  <tbody>
+    {% for p in out_of_stock_products %}
+    <tr style="background:#f8d7da;"><td>{{ p.name }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2 style="margin-top:2rem;">Export Reports</h2>
+<p>Download the current data as CSV (for spreadsheets) or PDF (for sharing/printing).</p>
+<div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:2rem;">
+  <a class="button" href="{% url 'export_orders_csv' %}">Orders — CSV</a>
+  <a class="button" href="{% url 'export_orders_pdf' %}">Orders — PDF</a>
+  <a class="button" href="{% url 'export_sales_csv' %}">Sales — CSV</a>
+  <a class="button" href="{% url 'export_sales_pdf' %}">Sales — PDF</a>
+  <a class="button" href="{% url 'export_users_csv' %}">Users — CSV</a>
+  <a class="button" href="{% url 'export_users_pdf' %}">Users — PDF</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+
+{{ revenue_trend_json|json_script:"revenue-trend-data" }}
+{{ top_selling_products_json|json_script:"top-selling-data" }}
+
+<script>
+  const revenueTrend = JSON.parse(
+    document.getElementById('revenue-trend-data').textContent
+  );
+
+  const topSelling = JSON.parse(
+    document.getElementById('top-selling-data').textContent
+  );
+
+  if (revenueTrend.length > 0) {
+    new Chart(document.getElementById('revenueTrendChart'), {
+      type: 'line',
+      data: {
+        labels: revenueTrend.map(r => r.day),
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: revenueTrend.map(r => r.revenue),
+          borderColor: '#2f3b2f',
+          backgroundColor: 'rgba(47,59,47,0.15)',
+          fill: true,
+          tension: 0.25,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      },
+    });
+  }
+
+  if (topSelling.length > 0) {
+    new Chart(document.getElementById('topSellingChart'), {
+      type: 'bar',
+      data: {
+        labels: topSelling.map(p => p.name),
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: topSelling.map(p => p.revenue),
+          backgroundColor: '#c9a26d',
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      },
+    });
+  }
+</script>
+{% endblock %}
