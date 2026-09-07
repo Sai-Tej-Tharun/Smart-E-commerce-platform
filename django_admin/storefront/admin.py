@@ -105,14 +105,24 @@ class PaymentAdmin(admin.ModelAdmin):
 @admin.register(ReturnRequest)
 class ReturnRequestAdmin(admin.ModelAdmin):
     """
-    NEW (Refund & Return milestone). `status` is editable — this is where
-    an admin would approve/reject a request — but note (see models.py)
-    that changing it here doesn't trigger any automated action yet
-    (no email, no stock restock, no refund). That's out of scope for this
-    milestone, which only covers the customer-facing request flow.
+    UPDATED (Admin-side Refund Processing milestone). `status` is now
+    read-only here on purpose — approving/rejecting a return has to go
+    through fastapi_backend's admin APIs (POST /admin/returns/{id}/approve
+    or /reject), because those are what actually issue the Stripe refund,
+    restock inventory, and fire notifications. Editing `status` directly
+    in this list (which the previous milestone allowed) would silently
+    skip all of that — the database would say "approved" while nothing
+    else about the return actually happened. This is view-only for admins
+    to monitor the queue; use Swagger/Postman (or a future admin UI) to
+    actually act on a request.
     """
     list_display = ("id", "order_id", "user_id", "reason", "status", "created_at")
     list_filter = ("status",)
-    list_editable = ("status",)
     search_fields = ("order_id", "user_id", "reason")
-    readonly_fields = ("order_id", "user_id", "reason", "comment", "created_at")
+    readonly_fields = ("order_id", "user_id", "reason", "comment", "status", "created_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False  # view-only — see class docstring

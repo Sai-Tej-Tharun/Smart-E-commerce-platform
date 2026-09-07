@@ -55,6 +55,22 @@ _TEMPLATES = {
         "subject": "Your GlowVeda order #{order_id} was delivered",
         "body": "Hi {name},\n\nOrder #{order_id} has been marked delivered. We hope you love it!\n\n— GlowVeda",
     },
+    # NEW (Admin-side Refund Processing milestone)
+    NotificationType.RETURN_APPROVED: {
+        "message": "Your return request for order #{order_id} was approved.",
+        "subject": "Return approved for order #{order_id}",
+        "body": "Hi {name},\n\nYour return request for order #{order_id} has been approved. Your refund is being processed.\n\n— GlowVeda",
+    },
+    NotificationType.RETURN_REJECTED: {
+        "message": "Your return request for order #{order_id} was rejected.",
+        "subject": "Return request update for order #{order_id}",
+        "body": "Hi {name},\n\nAfter review, we're unable to accept the return request for order #{order_id}. If you believe this is a mistake, please contact support.\n\n— GlowVeda",
+    },
+    NotificationType.REFUND_COMPLETED: {
+        "message": "Your refund of ₹{total} for order #{order_id} is complete.",
+        "subject": "Refund completed for order #{order_id}",
+        "body": "Hi {name},\n\nYour refund of ₹{total} for order #{order_id} has been processed and should appear on your original payment method soon.\n\n— GlowVeda",
+    },
 }
 
 

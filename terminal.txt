@@ -32,3 +32,9 @@ cd frontend
 npm install
 copy .env.example .env
 npm run dev
+
+
+git init
+git add .
+git commit -m "Initial commit"
+git push -u origin main
