@@ -87,3 +87,24 @@ def get_current_user(
         )
 
     return user
+
+# APPEND to core/security.py, after get_current_user()
+
+# NEW (Recommendation System milestone) — a bearer token is optional here,
+# never required. Used by GET /products/{id} in routes/products.py to log
+# a browsing-history row against the current user WHEN one is logged in,
+# without turning the product page into an authenticated-only route.
+_optional_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    if credentials is None:
+        return None
+    try:
+        email = decode_token(credentials.credentials, expected_type="access")
+    except HTTPException:
+        return None
+    return db.query(User).filter(User.email == email).first()

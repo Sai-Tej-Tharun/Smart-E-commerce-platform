@@ -29,9 +29,12 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from core.permissions import require_role
+from core.security import get_current_user_optional
 from models.product import Product
 from models.review import Review, ReviewStatus
+from models.user import User
 from schemas.product import ProductCreate, ProductOut
+from services.recommendation_service import record_product_view
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -130,10 +133,18 @@ def list_products_by_category(
 
 
 @router.get("/{product_id}", response_model=ProductOut)
-def get_product(product_id: int, db: Session = Depends(get_db)):
+def get_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    # NEW (Recommendation System milestone) — browsing-history signal for
+    # get_personalized_recommendations(); logged for guests too (user_id
+    # left null) so it still counts toward GET /products/trending.
+    record_product_view(db, product_id=product_id, user_id=current_user.id if current_user else None)
     return _attach_review_stats([product], db)[0]
 
 

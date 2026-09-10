@@ -3,8 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getProduct } from "../api/products";
 import { addToCart } from "../api/cart";
 import { getProductReviews, submitReview } from "../api/reviews";
+import { getSimilarProducts } from "../api/recommendations";
 import { useAuth } from "../context/AuthContext";
 import StarRating from "../components/StarRating";
+import RecommendationsSection from "../components/RecommendationsSection";
 
 // NEW — Reviews & Ratings milestone. Its own component so the review
 // form's local state (rating/comment/submitting/error) doesn't clutter
@@ -83,6 +85,10 @@ export default function ProductDetail() {
   const [reviewSort, setReviewSort] = useState("top");
   const [showReviewForm, setShowReviewForm] = useState(false);
 
+  // NEW — Recommendation System milestone
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [similarAddingId, setSimilarAddingId] = useState(null);
+
   useEffect(() => {
     setLoading(true);
     getProduct(id)
@@ -99,6 +105,29 @@ export default function ProductDetail() {
     loadReviews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, reviewSort]);
+
+  // NEW — Recommendation System milestone: "Similar Products"
+  useEffect(() => {
+    getSimilarProducts(id, 4)
+      .then((data) => setSimilarProducts(data.products))
+      .catch(() => setSimilarProducts([]));
+  }, [id]);
+
+  const handleAddSimilarToCart = async (similarProduct) => {
+    if (!isAuthenticated) {
+      setMessage("Please log in to add items to your cart.");
+      return;
+    }
+    setSimilarAddingId(similarProduct.id);
+    try {
+      await addToCart({ product_id: similarProduct.id, quantity: 1 });
+      setMessage(`Added "${similarProduct.name}" to your cart.`);
+    } catch {
+      setMessage("Could not add that item to your cart.");
+    } finally {
+      setSimilarAddingId(null);
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
@@ -132,8 +161,9 @@ export default function ProductDetail() {
   }
 
   const image = product.images?.[0];
-
+  
   return (
+    <>
     <section className="section">
       <div className="container">
         <div className="grid grid-2" style={{ gap: "2.5rem", alignItems: "start" }}>
@@ -241,5 +271,15 @@ export default function ProductDetail() {
         </div>
       </div>
     </section>
+
+    {/* NEW — Recommendation System milestone */}
+    <RecommendationsSection
+      title="Similar Products"
+      subtitle="You May Also Like"
+      products={similarProducts}
+      onAddToCart={handleAddSimilarToCart}
+      addingId={similarAddingId}
+    />
+    </>
   );
 }

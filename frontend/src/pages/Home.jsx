@@ -2,21 +2,45 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listProducts } from "../api/products";
 import ProductCard from "../components/ProductCard";
+import RecommendationsSection from "../components/RecommendationsSection";
 import { useAuth } from "../context/AuthContext";
 import { addToCart } from "../api/cart";
+import { getRecommendationsForUser, getTrendingProducts } from "../api/recommendations";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [addingId, setAddingId] = useState(null);
   const [message, setMessage] = useState("");
+
+  // NEW (Recommendation System milestone)
+  const [recommended, setRecommended] = useState([]);
+  const [trending, setTrending] = useState([]);
 
   useEffect(() => {
     listProducts()
       .then((data) => setProducts(data.slice(0, 4)))
       .finally(() => setLoading(false));
   }, []);
+
+  // "You May Also Like" — storewide trending rail, shown to everyone.
+  useEffect(() => {
+    getTrendingProducts(8)
+      .then((data) => setTrending(data.products))
+      .catch(() => setTrending([]));
+  }, []);
+
+  // "Recommended For You" — personalized, only once we know who's logged in.
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setRecommended([]);
+      return;
+    }
+    getRecommendationsForUser(user.id, 8)
+      .then((data) => setRecommended(data.products))
+      .catch(() => setRecommended([]));
+  }, [isAuthenticated, user?.id]);
 
   const handleAddToCart = async (product) => {
     if (!isAuthenticated) {
@@ -76,6 +100,27 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* NEW (Recommendation System milestone) — personalized, only rendered
+          once we actually have picks (empty until getRecommendationsForUser
+          resolves, and RecommendationsSection itself no-ops on an empty list). */}
+      <RecommendationsSection
+        title="Recommended For You"
+        subtitle="Just For You"
+        products={recommended}
+        onAddToCart={handleAddToCart}
+        addingId={addingId}
+      />
+
+      {/* NEW (Recommendation System milestone) — storewide trending rail,
+          shown to everyone regardless of login state. */}
+      <RecommendationsSection
+        title="You May Also Like"
+        subtitle="Trending Now"
+        products={trending}
+        onAddToCart={handleAddToCart}
+        addingId={addingId}
+      />
     </>
   );
 }
