@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from core.config import settings
-from routes import admin_returns, auth, cart, checkout, notifications, orders, products, recommendations, reviews, ws
+from routes import admin_returns, auth, blog, cart, checkout, notifications, orders, products, recommendations, reviews, ws
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(auth.router)
+app.include_router(blog.router) 
 # recommendations.router defines GET /products/trending, which MUST be
 # matched before products.router's GET /products/{product_id} — see
 # routes/recommendations.py's module docstring.
