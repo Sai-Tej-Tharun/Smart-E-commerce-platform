@@ -25,5 +25,10 @@ class ProductOut(BaseModel):
     popularity: int
     created_at: datetime
 
+    # NEW (Reviews & Ratings milestone) — computed from approved reviews
+    # only, in routes/products.py; not real columns on the Product model.
+    average_rating: float | None = None
+    review_count: int = 0
+
     class Config:
         from_attributes = True

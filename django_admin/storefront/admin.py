@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.core.files.storage import default_storage
 
 from .forms import ProductAdminForm
-from .models import CartItem, Order, OrderItem, Payment, Product, ReturnRequest, User
+from .models import CartItem, Order, OrderItem, Payment, Product, Review, ReturnRequest, User
 
 
 @admin.register(User)
@@ -126,3 +126,18 @@ class ReturnRequestAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False  # view-only — see class docstring
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    """
+    NEW (Reviews & Ratings milestone). `status` is editable right here —
+    this IS the moderation workflow. A review only shows up on the
+    product page (fastapi_backend's GET /products/{id}/reviews) once its
+    status is changed to Approved.
+    """
+    list_display = ("id", "product_id", "user_id", "rating", "status", "created_at")
+    list_filter = ("status", "rating")
+    list_editable = ("status",)
+    search_fields = ("product_id", "user_id", "comment")
+    readonly_fields = ("user_id", "product_id", "rating", "comment", "created_at")

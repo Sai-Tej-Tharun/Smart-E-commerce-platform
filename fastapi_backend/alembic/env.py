@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.config import settings  # noqa: E402
 from core.database import Base  # noqa: E402
-from models import cart, notification, order, payment, product, return_request, user  # noqa: E402  # import every model module
+from models import cart, notification, order, payment, product, return_request, review, user  # noqa: E402  # import every model module
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.SQLALCHEMY_DATABASE_URL)

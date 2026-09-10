@@ -213,3 +213,34 @@ class ReturnRequest(models.Model):
 
     def __str__(self):
         return f"order={self.order_id} — {self.reason} ({self.status})"
+class Review(models.Model):
+    """
+    NEW (Reviews & Ratings milestone). Mirrors fastapi_backend's reviews
+    table. Moderation happens here — see ReviewAdmin below — since
+    approving/rejecting a review has no side effects (unlike ReturnRequest,
+    where a real refund/restock workflow made direct editing unsafe; see
+    that model's admin registration for the contrast). `status` stays a
+    normal editable field.
+    """
+    STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    user_id = models.IntegerField()
+    product_id = models.IntegerField()
+    rating = models.IntegerField()
+    comment = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    created_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "reviews"
+        verbose_name = "Review"
+        verbose_name_plural = "Reviews"
+
+    def __str__(self):
+        return f"product={self.product_id} — {self.rating}★ ({self.status})"

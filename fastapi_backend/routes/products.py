@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from core.permissions import require_role
 from models.product import Product
+from models.review import Review, ReviewStatus
 from schemas.product import ProductCreate, ProductOut
 
 router = APIRouter(prefix="/products", tags=["Products"])
@@ -40,6 +41,33 @@ class SortOption(str, Enum):
     price_asc = "price_asc"
     price_desc = "price_desc"
     newest = "newest"
+
+
+def _attach_review_stats(products: List[Product], db: Session) -> List[Product]:
+    """
+    NEW (Reviews & Ratings milestone) — the Rating Aggregation requirement
+    (average rating, total reviews), computed from APPROVED reviews only
+    and attached to each Product instance as plain instance attributes
+    before returning it. This works with ProductOut's `from_attributes`
+    config the same way a real mapped column would — average_rating and
+    review_count aren't actual database columns on `products`, just
+    values set here for this response.
+    """
+    if not products:
+        return products
+    ids = [p.id for p in products]
+    stats = (
+        db.query(Review.product_id, func.avg(Review.rating).label("avg"), func.count(Review.id).label("cnt"))
+        .filter(Review.product_id.in_(ids), Review.status == ReviewStatus.APPROVED)
+        .group_by(Review.product_id)
+        .all()
+    )
+    stats_by_id = {row.product_id: (float(row.avg), row.cnt) for row in stats}
+    for p in products:
+        avg, cnt = stats_by_id.get(p.id, (None, 0))
+        p.average_rating = round(avg, 2) if avg is not None else None
+        p.review_count = cnt
+    return products
 
 
 def _apply_filters(
@@ -83,7 +111,7 @@ def list_products(
     db: Session = Depends(get_db),
 ):
     query = _apply_filters(db.query(Product), category, min_price, max_price, in_stock, sort)
-    return query.all()
+    return _attach_review_stats(query.all(), db)
 
 
 @router.get("/category/{category}", response_model=List[ProductOut])
@@ -98,7 +126,7 @@ def list_products_by_category(
     # Same filtering/sorting as GET /products, just with category as a path
     # segment instead of a query param — a friendlier URL for category pages.
     query = _apply_filters(db.query(Product), category, min_price, max_price, in_stock, sort)
-    return query.all()
+    return _attach_review_stats(query.all(), db)
 
 
 @router.get("/{product_id}", response_model=ProductOut)
@@ -106,7 +134,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    return product
+    return _attach_review_stats([product], db)[0]
 
 
 @router.post("", response_model=ProductOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_role("admin"))])

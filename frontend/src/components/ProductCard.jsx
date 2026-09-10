@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import StarRating from "./StarRating";
 
 export default function ProductCard({ product, onAddToCart, adding }) {
   const image = product.images?.[0];
@@ -20,6 +21,9 @@ export default function ProductCard({ product, onAddToCart, adding }) {
         <h3 className="product-card__title">
           <Link to={`/products/${product.id}`}>{product.name}</Link>
         </h3>
+        <div style={{ margin: "0.25rem 0" }}>
+          <StarRating value={product.average_rating} count={product.review_count} size="0.85rem" />
+        </div>
         <div className="product-card__price">
           <span className="product-card__price-current">₹{Number(product.price).toFixed(2)}</span>
         </div>

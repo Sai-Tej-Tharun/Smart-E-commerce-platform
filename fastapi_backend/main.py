@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from core.config import settings
-from routes import admin_returns, auth, cart, checkout, notifications, orders, products, ws
+from routes import admin_returns, auth, cart, checkout, notifications, orders, products, reviews, ws
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ app.include_router(orders.router)
 app.include_router(notifications.router)
 app.include_router(ws.router)
 app.include_router(admin_returns.router)
+app.include_router(reviews.router)
 
 
 @app.get("/health", tags=["System"])
