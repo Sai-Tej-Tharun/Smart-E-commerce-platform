@@ -12,6 +12,9 @@ import logging
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+
+from core.media import MEDIA_ROOT
 
 from core.config import settings
 from routes import admin_returns, auth, blog, cart, checkout, notifications, orders, products, recommendations, reviews, ws
@@ -33,6 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=str(MEDIA_ROOT)), name="media")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

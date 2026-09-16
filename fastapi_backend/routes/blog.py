@@ -30,16 +30,26 @@ with nothing configured.
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
+from typing import Optional
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from core.database import get_db
 from core.email import send_email
+from core.media import delete_post_image, save_post_image
 from core.security import get_current_user
 from models.blog import Comment, Like, Post
 from models.user import User
-from schemas.blog import CommentCreate, CommentOut, LikeOut, PostCreate, PostOut, PostUpdate
+from schemas.blog import (
+    CommentCreate,
+    CommentOut,
+    LikeOut,
+    PaginatedPostsOut,
+    PostOut,
+    PostUpdate,
+)
 
 logger = logging.getLogger("blog")
 
@@ -53,6 +63,7 @@ def _serialize_post(db: Session, post: Post) -> PostOut:
     out.like_count = like_count
     out.comment_count = comment_count
     out.author_name = post.author.name if post.author else None
+    out.image_url = post.image
     return out
 
 
@@ -60,22 +71,57 @@ def _serialize_post(db: Session, post: Post) -> PostOut:
 
 @router.post("/posts", response_model=PostOut, status_code=status.HTTP_201_CREATED)
 def create_post(
-    payload: PostCreate,
+    title: str = Form(..., min_length=1, max_length=200),
+    content: str = Form(..., min_length=1),
+    image: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    post = Post(title=payload.title, content=payload.content, author_id=current_user.id)
+    image_path = None
+    if image is not None and image.filename:
+        try:
+            image_path = save_post_image(image)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    post = Post(title=title, content=content, image=image_path, author_id=current_user.id)
     db.add(post)
     db.commit()
     db.refresh(post)
     return _serialize_post(db, post)
 
 
-@router.get("/posts", response_model=List[PostOut])
-def list_posts(db: Session = Depends(get_db)):
-    """Public — anyone can view all posts, no auth required."""
-    posts = db.query(Post).order_by(Post.created_at.desc()).all()
-    return [_serialize_post(db, p) for p in posts]
+@router.get("/posts", response_model=PaginatedPostsOut)
+def list_posts(
+    page: int = Query(1, ge=1, description="1-indexed page number"),
+    limit: int = Query(10, ge=1, le=100, description="Posts per page (max 100)"),
+    search: Optional[str] = Query(None, min_length=1, description="Matches against title or content"),
+    db: Session = Depends(get_db),
+):
+    """Public — anyone can view all posts, no auth required. Supports pagination and search together."""
+    query = db.query(Post)
+
+    if search:
+        like_pattern = f"%{search}%"
+        query = query.filter(or_(Post.title.ilike(like_pattern), Post.content.ilike(like_pattern)))
+
+    total = query.count()
+    total_pages = (total + limit - 1) // limit if total > 0 else 0
+
+    posts = (
+        query.order_by(Post.created_at.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
+    return PaginatedPostsOut(
+        items=[_serialize_post(db, p) for p in posts],
+        total=total,
+        page=page,
+        limit=limit,
+        total_pages=total_pages,
+    )
 
 
 @router.get("/posts/mine", response_model=List[PostOut])
@@ -104,7 +150,9 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
 @router.put("/posts/{post_id}", response_model=PostOut)
 def update_post(
     post_id: int,
-    payload: PostUpdate,
+    title: Optional[str] = Form(None, min_length=1, max_length=200),
+    content: Optional[str] = Form(None, min_length=1),
+    image: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -114,10 +162,18 @@ def update_post(
     if post.author_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only edit your own posts")
 
-    if payload.title is not None:
-        post.title = payload.title
-    if payload.content is not None:
-        post.content = payload.content
+    if title is not None:
+        post.title = title
+    if content is not None:
+        post.content = content
+
+    if image is not None and image.filename:
+        try:
+            new_image_path = save_post_image(image)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        delete_post_image(post.image)  # remove the old file now that it's replaced
+        post.image = new_image_path
 
     db.commit()
     db.refresh(post)
@@ -136,6 +192,7 @@ def delete_post(
     if post.author_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only delete your own posts")
 
+    delete_post_image(post.image)
     db.delete(post)
     db.commit()
     return None

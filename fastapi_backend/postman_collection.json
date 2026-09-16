@@ -20,6 +20,14 @@
     {
       "key": "admin_access_token",
       "value": ""
+    },
+    {
+      "key": "post_id",
+      "value": ""
+    },
+    {
+      "key": "comment_id",
+      "value": ""
     }
   ],
   "item": [
@@ -455,6 +463,330 @@
           "path": [
             "orders",
             "1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Post (with image)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data.id) { pm.collectionVariables.set('post_id', data.id); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "My First Blog Post",
+              "type": "text"
+            },
+            {
+              "key": "content",
+              "value": "This is a test post created from Postman.",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/posts",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Posts (pagination + search)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/posts?page=1&limit=10&search=",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Optional keyword match against title or content"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get My Posts",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/posts/mine",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "mine"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Single Post",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Post (with image)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "My Updated Blog Post",
+              "type": "text"
+            },
+            {
+              "key": "content",
+              "value": "Updated content text.",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Post",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Add Comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data.id) { pm.collectionVariables.set('comment_id', data.id); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Great post!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}/comments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}",
+            "comments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Comments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}/comments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}",
+            "comments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Comment",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}/comments/{{comment_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}",
+            "comments",
+            "{{comment_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Like Post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}/like",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}",
+            "like"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Unlike Post",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/posts/{{post_id}}/like",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "posts",
+            "{{post_id}}",
+            "like"
           ]
         }
       }

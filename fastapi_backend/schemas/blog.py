@@ -5,7 +5,7 @@ Pydantic request/response models for the Blog Management feature.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +25,7 @@ class PostOut(BaseModel):
     id: int
     title: str
     content: str
+    image_url: Optional[str] = None
     author_id: int
     created_at: datetime
     # Denormalized for the frontend — populated in routes/blog.py, not a real column
@@ -61,3 +62,11 @@ class LikeOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PaginatedPostsOut(BaseModel):
+    items: List[PostOut]
+    total: int
+    page: int
+    limit: int
+    total_pages: int

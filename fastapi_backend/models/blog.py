@@ -21,6 +21,7 @@ class Post(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
+    image = Column(String(255), nullable=True)  # e.g. "/media/posts/<uuid>.jpg"
     author_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
