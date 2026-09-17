@@ -40,7 +40,8 @@ from core.database import get_db
 from core.email import send_email
 from core.media import delete_post_image, save_post_image
 from core.security import get_current_user
-from models.blog import Comment, Like, Post
+from core.subscription_limits import enforce_comment_limit, enforce_image_limit, enforce_like_limit, enforce_post_limit
+from models.blog import Comment, Like, Post, PostImage
 from models.user import User
 from schemas.blog import (
     CommentCreate,
@@ -63,7 +64,7 @@ def _serialize_post(db: Session, post: Post) -> PostOut:
     out.like_count = like_count
     out.comment_count = comment_count
     out.author_name = post.author.name if post.author else None
-    out.image_url = post.image
+    out.images = [img.image_url for img in post.images]
     return out
 
 
@@ -73,19 +74,27 @@ def _serialize_post(db: Session, post: Post) -> PostOut:
 def create_post(
     title: str = Form(..., min_length=1, max_length=200),
     content: str = Form(..., min_length=1),
-    image: Optional[UploadFile] = File(None),
+    images: List[UploadFile] = File(default=[]),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    image_path = None
-    if image is not None and image.filename:
-        try:
-            image_path = save_post_image(image)
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    enforce_post_limit(db, current_user)
 
-    post = Post(title=title, content=content, image=image_path, author_id=current_user.id)
+    uploaded = [f for f in images if f is not None and f.filename]
+    enforce_image_limit(db, current_user, len(uploaded))
+
+    post = Post(title=title, content=content, author_id=current_user.id)
     db.add(post)
+    db.flush()  # assigns post.id without committing, so PostImage rows can reference it
+
+    for f in uploaded:
+        try:
+            image_path = save_post_image(f)
+        except ValueError as e:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        db.add(PostImage(post_id=post.id, image_url=image_path))
+
     db.commit()
     db.refresh(post)
     return _serialize_post(db, post)
@@ -152,10 +161,16 @@ def update_post(
     post_id: int,
     title: Optional[str] = Form(None, min_length=1, max_length=200),
     content: Optional[str] = Form(None, min_length=1),
-    image: Optional[UploadFile] = File(None),
+    images: List[UploadFile] = File(default=[]),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    If `images` is provided (non-empty), it REPLACES all of the post's
+    existing images — this keeps the plan-limit check simple (count the
+    new set, not "existing + new"). Omit `images` entirely to leave the
+    post's current images untouched while editing title/content.
+    """
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
@@ -167,13 +182,21 @@ def update_post(
     if content is not None:
         post.content = content
 
-    if image is not None and image.filename:
-        try:
-            new_image_path = save_post_image(image)
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-        delete_post_image(post.image)  # remove the old file now that it's replaced
-        post.image = new_image_path
+    uploaded = [f for f in images if f is not None and f.filename]
+    if uploaded:
+        enforce_image_limit(db, current_user, len(uploaded))
+
+        for old in list(post.images):
+            delete_post_image(old.image_url)
+            db.delete(old)
+
+        for f in uploaded:
+            try:
+                image_path = save_post_image(f)
+            except ValueError as e:
+                db.rollback()
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+            db.add(PostImage(post_id=post.id, image_url=image_path))
 
     db.commit()
     db.refresh(post)
@@ -192,8 +215,9 @@ def delete_post(
     if post.author_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only delete your own posts")
 
-    delete_post_image(post.image)
-    db.delete(post)
+    for img in post.images:
+        delete_post_image(img.image_url)
+    db.delete(post)  # cascades to blog_post_images via the relationship/FK
     db.commit()
     return None
 
@@ -210,6 +234,8 @@ def add_comment(
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+    enforce_comment_limit(db, current_user)
 
     comment = Comment(post_id=post_id, user_id=current_user.id, text=payload.text)
     db.add(comment)
@@ -296,6 +322,8 @@ def like_post(
     )
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You already liked this post")
+
+    enforce_like_limit(db, current_user)
 
     like = Like(post_id=post_id, user_id=current_user.id)
     db.add(like)

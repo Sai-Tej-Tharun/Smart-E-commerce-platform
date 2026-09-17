@@ -244,3 +244,55 @@ class Review(models.Model):
 
     def __str__(self):
         return f"product={self.product_id} — {self.rating}★ ({self.status})"
+
+
+class SubscriptionPlan(models.Model):
+    """
+    Mirrors fastapi_backend's subscription_plans table (seeded with
+    Basic/Premium/Pro by its Alembic migration — see that migration's
+    module docstring for the enum-storage convention this follows).
+    """
+    PLAN_CHOICES = [
+        ("BASIC", "Basic"),
+        ("PREMIUM", "Premium"),
+        ("PRO", "Pro"),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=20, choices=PLAN_CHOICES, unique=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    max_posts = models.IntegerField()
+    max_images_per_post = models.IntegerField()
+    max_likes_per_day = models.IntegerField()
+    max_comments_per_day = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = "subscription_plans"
+        verbose_name = "Subscription Plan"
+        verbose_name_plural = "Subscription Plans"
+
+    def __str__(self):
+        return f"{self.name} (₹{self.price})"
+
+
+class BillingHistory(models.Model):
+    """Mirrors fastapi_backend's billing_history table."""
+    id = models.AutoField(primary_key=True)
+    user_id = models.IntegerField()
+    plan_id = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    transaction_id = models.CharField(max_length=64)
+    invoice_path = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "billing_history"
+        verbose_name = "Billing History"
+        verbose_name_plural = "Billing History"
+
+    def __str__(self):
+        return f"user={self.user_id} — {self.transaction_id}"

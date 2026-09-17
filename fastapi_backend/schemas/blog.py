@@ -25,7 +25,7 @@ class PostOut(BaseModel):
     id: int
     title: str
     content: str
-    image_url: Optional[str] = None
+    images: List[str] = Field(default_factory=list)
     author_id: int
     created_at: datetime
     # Denormalized for the frontend — populated in routes/blog.py, not a real column

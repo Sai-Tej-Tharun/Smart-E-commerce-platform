@@ -8,7 +8,7 @@ role later is a code change + migration, not a destructive column rebuild.
 
 import enum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -34,10 +34,17 @@ class User(Base):
     # set when the user was created via Auth0 rather than email/password
     auth0_sub = Column(String(255), unique=True, nullable=True, index=True)
 
+    # Every user has an active plan (defaults to Basic — see the migration's
+    # seed data and backfill). Nullable at the column level only so the
+    # migration can add it before backfilling; application code should
+    # always be able to assume this is set.
+    subscription_plan_id = Column(Integer, ForeignKey("subscription_plans.id"), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
+    subscription_plan = relationship("SubscriptionPlan")
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email} role={self.role}>"

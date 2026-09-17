@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.core.files.storage import default_storage
 
 from .forms import ProductAdminForm
-from .models import CartItem, Order, OrderItem, Payment, Product, Review, ReturnRequest, User
+from .models import BillingHistory, CartItem, Order, OrderItem, Payment, Product, Review, ReturnRequest, SubscriptionPlan, User
 
 
 @admin.register(User)
@@ -141,3 +141,29 @@ class ReviewAdmin(admin.ModelAdmin):
     list_editable = ("status",)
     search_fields = ("product_id", "user_id", "comment")
     readonly_fields = ("user_id", "product_id", "rating", "comment", "created_at")
+
+
+@admin.register(SubscriptionPlan)
+class SubscriptionPlanAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "price", "max_posts", "max_images_per_post", "max_likes_per_day", "max_comments_per_day")
+    ordering = ("price",)
+    # These are seed data set by the Alembic migration — editable here if you
+    # want to tune limits without a new migration, but not addable/deletable,
+    # since the app assumes exactly Basic/Premium/Pro exist.
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BillingHistory)
+class BillingHistoryAdmin(admin.ModelAdmin):
+    list_display = ("id", "user_id", "plan_id", "price", "start_date", "end_date", "transaction_id")
+    list_filter = ("plan_id",)
+    search_fields = ("user_id", "transaction_id")
+    ordering = ("-created_at",)
+    readonly_fields = ("user_id", "plan_id", "price", "start_date", "end_date", "transaction_id", "invoice_path", "created_at")
+
+    def has_add_permission(self, request):
+        return False  # created only via POST /subscriptions/subscribe, never by hand
