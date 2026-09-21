@@ -32,17 +32,17 @@ from typing import List
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from core.email import send_email
 from core.media import delete_post_image, save_post_image
 from core.security import get_current_user
 from core.subscription_limits import enforce_comment_limit, enforce_image_limit, enforce_like_limit, enforce_post_limit
 from models.blog import Comment, Like, Post, PostImage
 from models.user import User
+from services.notification_service import notify_post_owner_of_comment, notify_post_owner_of_like
 from schemas.blog import (
     CommentCreate,
     CommentOut,
@@ -58,13 +58,32 @@ router = APIRouter(tags=["Blog"])
 
 
 def _serialize_post(db: Session, post: Post) -> PostOut:
-    like_count = db.query(func.count(Like.id)).filter(Like.post_id == post.id).scalar() or 0
-    comment_count = db.query(func.count(Comment.id)).filter(Comment.post_id == post.id).scalar() or 0
-    out = PostOut.model_validate(post)
-    out.like_count = like_count
-    out.comment_count = comment_count
-    out.author_name = post.author.name if post.author else None
-    out.images = [img.image_url for img in post.images]
+    like_count = (
+        db.query(func.count(Like.id))
+        .filter(Like.post_id == post.id)
+        .scalar()
+        or 0
+    )
+
+    comment_count = (
+        db.query(func.count(Comment.id))
+        .filter(Comment.post_id == post.id)
+        .scalar()
+        or 0
+    )
+
+    out = PostOut(
+        id=post.id,
+        title=post.title,
+        content=post.content,
+        images=[img.image_url for img in post.images],
+        author_id=post.author_id,
+        created_at=post.created_at,
+        author_name=post.author.name if post.author else None,
+        like_count=like_count,
+        comment_count=comment_count,
+    )
+
     return out
 
 
@@ -228,6 +247,7 @@ def delete_post(
 def add_comment(
     post_id: int,
     payload: CommentCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -242,15 +262,7 @@ def add_comment(
     db.commit()
     db.refresh(comment)
 
-    if post.author_id != current_user.id:
-        try:
-            send_email(
-                to=post.author.email,
-                subject="New comment on your post",
-                body=f"{current_user.name} commented on '{post.title}':\n\n{payload.text}",
-            )
-        except Exception:
-            logger.exception("Failed to send new-comment notification email to %s", post.author.email)
+    background_tasks.add_task(notify_post_owner_of_comment, post, current_user)
 
     out = CommentOut.model_validate(comment)
     out.user_name = current_user.name
@@ -308,6 +320,7 @@ def delete_comment(
 @router.post("/posts/{post_id}/like", response_model=LikeOut, status_code=status.HTTP_201_CREATED)
 def like_post(
     post_id: int,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -330,15 +343,7 @@ def like_post(
     db.commit()
     db.refresh(like)
 
-    if post.author_id != current_user.id:
-        try:
-            send_email(
-                to=post.author.email,
-                subject="Someone liked your post",
-                body=f"{current_user.name} liked your post '{post.title}'.",
-            )
-        except Exception:
-            logger.exception("Failed to send new-like notification email to %s", post.author.email)
+    background_tasks.add_task(notify_post_owner_of_like, post, current_user)
 
     return like
 
