@@ -45,6 +45,10 @@ export default function Navbar() {
     <li className="nav-item">
       <Link to="/orders" className="nav-link">Orders</Link>
     </li>
+
+    <li className="nav-item">
+      <Link to="/posts/new" className="nav-link">New Post</Link>
+    </li>
   </>
 )}
           {user?.role === "admin" && (

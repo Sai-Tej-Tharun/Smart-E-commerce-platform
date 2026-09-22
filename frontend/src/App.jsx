@@ -9,6 +9,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
+import CreatePost from "./pages/CreatePost";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
 import AdminProducts from "./pages/AdminProducts";
@@ -48,6 +49,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+                    <Route
+            path="/posts/new"
+            element={
+              <ProtectedRoute>
+                <CreatePost />
               </ProtectedRoute>
             }
           />
