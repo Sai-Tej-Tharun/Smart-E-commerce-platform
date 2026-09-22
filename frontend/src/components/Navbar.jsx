@@ -36,11 +36,17 @@ export default function Navbar() {
               Cart{cartBadge && cartBadge.total_items > 0 ? ` (${cartBadge.total_items})` : ""}
             </Link>
           </li>
-          {isAuthenticated && (
-            <li className="nav-item">
-              <Link to="/orders" className="nav-link">Orders</Link>
-            </li>
-          )}
+{isAuthenticated && (
+  <>
+    <li className="nav-item">
+      <Link to="/dashboard" className="nav-link">Dashboard</Link>
+    </li>
+
+    <li className="nav-item">
+      <Link to="/orders" className="nav-link">Orders</Link>
+    </li>
+  </>
+)}
           {user?.role === "admin" && (
             <li className="nav-item">
               <Link to="/admin/products" className="nav-link">Admin</Link>

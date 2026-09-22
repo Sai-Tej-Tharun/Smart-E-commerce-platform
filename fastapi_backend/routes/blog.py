@@ -82,6 +82,7 @@ def _serialize_post(db: Session, post: Post) -> PostOut:
         author_name=post.author.name if post.author else None,
         like_count=like_count,
         comment_count=comment_count,
+        views=post.views or 0,
     )
 
     return out
@@ -168,10 +169,15 @@ def my_posts(
 
 @router.get("/posts/{post_id}", response_model=PostOut)
 def get_post(post_id: int, db: Session = Depends(get_db)):
-    """Public — anyone can view a single post."""
+    """Public — anyone can view a single post. Each successful view increments the post's view counter."""
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+    post.views = (post.views or 0) + 1
+    db.commit()
+    db.refresh(post)
+
     return _serialize_post(db, post)
 
 

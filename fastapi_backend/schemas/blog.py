@@ -32,6 +32,7 @@ class PostOut(BaseModel):
     author_name: Optional[str] = None
     like_count: int = 0
     comment_count: int = 0
+    views: int = 0
 
     class Config:
         from_attributes = True
