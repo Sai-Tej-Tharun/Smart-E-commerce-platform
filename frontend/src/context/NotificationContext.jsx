@@ -61,7 +61,11 @@ export function NotificationProvider({ children }) {
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.event === "order_status_updated") {
+      if (data.event === "order_status_updated" || data.event === "notification") {
+        // "order_status_updated" — order lifecycle events (existing).
+        // "notification" — blog likes/comments and subscription activation
+        // (core/notify.py's notify_user_event). Both add a live row the
+        // same way; only the event name they arrive under differs.
         setUnreadCount((prev) => prev + 1);
         setNotifications((prev) => [
           { id: `live-${Date.now()}`, type: data.notification_type, message: data.message, read_status: false, timestamp: new Date().toISOString() },

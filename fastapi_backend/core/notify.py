@@ -19,6 +19,7 @@ import logging
 
 from sqlalchemy.orm import Session
 
+from core.database import SessionLocal
 from core.email import send_email
 from core.ws_manager import manager
 from models.notification import Notification, NotificationType
@@ -118,3 +119,50 @@ async def notify_user(db: Session, user: User, notif_type: NotificationType, ord
     await manager.send_to_user(user.id, event)
 
     return notification
+
+from core.database import SessionLocal
+
+
+async def notify_user_event(
+    user_id: int,
+    notif_type: NotificationType,
+    message: str,
+    email_subject: str | None = None,
+    email_body: str | None = None,
+) -> None:
+    """
+    Sibling to notify_user() for events that already have a fully-formed
+    message (blog likes/comments, subscription activation) rather than a
+    templated order_id/total substitution.
+
+    Opens its OWN database session (SessionLocal(), not a request-scoped
+    Depends(get_db) one) because every call site schedules this via
+    FastAPI BackgroundTasks — those run after the triggering request's own
+    session has already been closed, so reusing it here would fail.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return
+
+        # 1. In-app notification row
+        notification = Notification(user_id=user.id, type=notif_type, message=message)
+        db.add(notification)
+        db.commit()
+
+        # 2. Email — logs instead of sending if SMTP isn't configured (core/email.py)
+        try:
+            send_email(to=user.email, subject=email_subject or message, body=email_body or message)
+        except Exception:
+            logger.exception("Failed to send notification email to %s", user.email)
+
+        # 3. Real-time push, if the user has a WebSocket open right now
+        await manager.send_to_user(
+            user.id,
+            {"event": "notification", "notification_type": notif_type.value, "message": message},
+        )
+    finally:
+        db.close()
+
+

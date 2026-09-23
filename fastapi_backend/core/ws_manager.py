@@ -22,13 +22,16 @@ that need to push an event to `async def` avoids that entirely; there's
 no thread/loop mismatch to work around if everything just stays on one
 event loop and awaits normally.
 
-Two event types are broadcast, matching the spec:
+Three event types are broadcast, matching the spec:
   order_status_updated — sent whenever an order's order_status or
                           payment_status changes (checkout webhook, or
                           Django admin marking shipped/delivered)
   cart_updated          — sent whenever the user's own cart changes
                           (add/update/remove), so a second open tab stays
                           in sync without polling
+  notification          — generic push for any other in-app notification
+                          (blog likes/comments, subscription activation —
+                          see core/notify.py's notify_user_event)
 """
 
 import logging

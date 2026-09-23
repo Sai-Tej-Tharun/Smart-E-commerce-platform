@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ from models.blog import Comment, Like, Post
 from models.subscription import BillingHistory, SubscriptionPlan
 from models.user import User
 from schemas.subscription import BillingHistoryOut, MySubscriptionOut, SubscribeRequest, SubscriptionPlanOut
+from services.notification_service import notify_subscription_activated
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
@@ -37,6 +38,7 @@ def list_plans(db: Session = Depends(get_db)):
 @router.post("/subscribe", response_model=BillingHistoryOut, status_code=status.HTTP_201_CREATED)
 def subscribe(
     payload: SubscribeRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -72,6 +74,14 @@ def subscribe(
 
     db.commit()
     db.refresh(billing_row)
+
+    background_tasks.add_task(
+        notify_subscription_activated,
+        current_user.id,
+        plan.name.value,
+        f"₹{plan.price}",
+        end_date,
+    )
 
     return BillingHistoryOut(
         id=billing_row.id,

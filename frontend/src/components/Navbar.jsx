@@ -36,6 +36,9 @@ export default function Navbar() {
               Cart{cartBadge && cartBadge.total_items > 0 ? ` (${cartBadge.total_items})` : ""}
             </Link>
           </li>
+                    <li className="nav-item">
+            <Link to="/posts" className="nav-link">Posts</Link>
+          </li>
 {isAuthenticated && (
   <>
     <li className="nav-item">
@@ -44,10 +47,6 @@ export default function Navbar() {
 
     <li className="nav-item">
       <Link to="/orders" className="nav-link">Orders</Link>
-    </li>
-
-    <li className="nav-item">
-      <Link to="/posts/new" className="nav-link">New Post</Link>
     </li>
   </>
 )}

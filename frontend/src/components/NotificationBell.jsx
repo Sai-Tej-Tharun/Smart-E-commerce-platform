@@ -7,6 +7,9 @@ const TYPE_LABELS = {
   payment_failed: "Payment Failed",
   order_shipped: "Order Shipped",
   order_delivered: "Order Delivered",
+  blog_like_received: "New Like",
+  blog_comment_received: "New Comment",
+  subscription_activated: "Subscription Activated",
 };
 
 export default function NotificationBell() {

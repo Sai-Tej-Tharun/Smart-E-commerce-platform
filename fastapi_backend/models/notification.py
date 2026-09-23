@@ -29,6 +29,10 @@ class NotificationType(str, enum.Enum):
     RETURN_APPROVED = "return_approved"
     RETURN_REJECTED = "return_rejected"
     REFUND_COMPLETED = "refund_completed"
+    # Blog notification milestone
+    BLOG_LIKE_RECEIVED = "blog_like_received"
+    BLOG_COMMENT_RECEIVED = "blog_comment_received"
+    SUBSCRIPTION_ACTIVATED = "subscription_activated"
 
 
 class Notification(Base):
