@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from core.media import MEDIA_ROOT
 
 from core.config import settings
-from routes import admin_returns, auth, blog, cart, checkout, dashboard, notifications, orders, products, recommendations, reviews, subscriptions, ws
+from routes import admin_returns, auth, blog, cart, checkout, dashboard, notifications, orders, products, recommendations, reviews, subscriptions, support, ws
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(auth.router)
 app.include_router(blog.router) 
 app.include_router(dashboard.router)
+app.include_router(support.router)
 # recommendations.router defines GET /products/trending, which MUST be
 # matched before products.router's GET /products/{product_id} — see
 # routes/recommendations.py's module docstring.
@@ -63,6 +64,7 @@ app.include_router(notifications.router)
 app.include_router(ws.router)
 app.include_router(admin_returns.router)
 app.include_router(reviews.router)
+app.include_router(subscriptions.router)
 
 
 @app.get("/health", tags=["System"])

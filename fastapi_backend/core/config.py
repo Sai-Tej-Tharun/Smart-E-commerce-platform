@@ -73,6 +73,13 @@ class Settings(BaseSettings):
         # Refund & Return milestone: how many days after delivery a customer
     # can still request a return. See routes/orders.py's request_return().
     RETURN_WINDOW_DAYS: int = 7
+    
+    # AI Support Chat milestone — left blank, core/ai_support.py falls back
+    # to keyword-matched FAQ answers (no external call, no cost, works out
+    # of the box). Set this to a real key to switch to live OpenAI replies
+    # with zero other code changes.
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

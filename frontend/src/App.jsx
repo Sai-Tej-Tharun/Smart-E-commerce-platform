@@ -18,6 +18,7 @@ import AdminProducts from "./pages/AdminProducts";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotificationToast from "./components/NotificationToast";
+import SupportChatWidget from "./components/SupportChatWidget";
 
 export default function App() {
   return (
@@ -79,6 +80,7 @@ export default function App() {
       </main>
       <Footer />
       <NotificationToast />
+      <SupportChatWidget />
     </>
   );
 }
