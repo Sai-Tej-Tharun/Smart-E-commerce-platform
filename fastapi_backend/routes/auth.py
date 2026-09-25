@@ -132,6 +132,20 @@ def social_login(payload: SocialLoginRequest, db: Session = Depends(get_db)):
     email = claims.get("email")
     name = claims.get("name", email or "Social User")
 
+    # Facebook logins commonly omit email if the user declines that
+    # permission. users.email is NOT NULL/unique, so without this check a
+    # missing email would fail at db.commit() with a raw 500 instead of a
+    # clean, actionable error.
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Your social account didn't share an email address with us, and an email "
+                "is required to create your profile. Please allow email access and try again, "
+                "or sign up with email and password instead."
+            ),
+        )
+
     user = db.query(User).filter(User.auth0_sub == auth0_sub).first()
     if not user and email:
         # If they'd previously registered with the same email/password, link accounts
