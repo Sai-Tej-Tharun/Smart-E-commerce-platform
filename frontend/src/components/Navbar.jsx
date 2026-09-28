@@ -43,6 +43,7 @@ export default function Navbar() {
 {isAuthenticated && (
   <li className="nav-item">
     <Link to="/posts/new" className="nav-link">New Post</Link>
+    <Link to="/my-posts" className="nav-link">My Posts</Link>
   </li>
 )}
 {isAuthenticated && (

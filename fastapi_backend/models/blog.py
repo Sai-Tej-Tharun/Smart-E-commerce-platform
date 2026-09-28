@@ -14,7 +14,9 @@ from sqlalchemy.sql import func
 
 from core.database import Base
 
-
+POST_DRAFT = "draft"
+POST_SCHEDULED = "scheduled"
+POST_PUBLISHED = "published"
 class Post(Base):
     __tablename__ = "blog_posts"
 
@@ -23,6 +25,9 @@ class Post(Base):
     content = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     views = Column(Integer, nullable=False, default=0, server_default="0")
+    status = Column(String(20), nullable=False, default=POST_PUBLISHED, server_default=POST_PUBLISHED, index=True)
+    scheduled_at = Column(DateTime, nullable=True, index=True)   # UTC, naive
+    published_at = Column(DateTime, nullable=True)                # UTC, naive
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     author = relationship("User")

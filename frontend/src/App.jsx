@@ -10,6 +10,8 @@ import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import CreatePost from "./pages/CreatePost";
+import EditPost from "./pages/EditPost";
+import MyPosts from "./pages/MyPosts";
 import Posts from "./pages/Posts";
 import PostDetail from "./pages/PostDetail";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
@@ -60,6 +62,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CreatePost />
+              </ProtectedRoute>
+            }
+          />
+                    <Route
+            path="/posts/:postId/edit"
+            element={
+              <ProtectedRoute>
+                <EditPost />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-posts"
+            element={
+              <ProtectedRoute>
+                <MyPosts />
               </ProtectedRoute>
             }
           />

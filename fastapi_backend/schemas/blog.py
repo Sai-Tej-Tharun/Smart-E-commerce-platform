@@ -4,10 +4,10 @@ schemas/blog.py
 Pydantic request/response models for the Blog Management feature.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 # ---------- Post ----------
@@ -33,6 +33,18 @@ class PostOut(BaseModel):
     like_count: int = 0
     comment_count: int = 0
     views: int = 0
+    status: str = "published"
+    scheduled_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+
+    @field_serializer("scheduled_at", "published_at")
+    def _serialize_utc(self, value: Optional[datetime]):
+        # Stored as naive UTC; emit an explicit "Z" so browsers convert correctly.
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.isoformat().replace("+00:00", "Z")
 
     class Config:
         from_attributes = True

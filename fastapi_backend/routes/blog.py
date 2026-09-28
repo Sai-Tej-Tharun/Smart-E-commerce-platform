@@ -38,9 +38,9 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from core.media import delete_post_image, save_post_image
-from core.security import get_current_user
+from core.security import get_current_user, get_current_user_optional
 from core.subscription_limits import enforce_comment_limit, enforce_image_limit, enforce_like_limit, enforce_post_limit
-from models.blog import Comment, Like, Post, PostImage
+from models.blog import POST_DRAFT, POST_PUBLISHED, POST_SCHEDULED, Comment, Like, Post, PostImage
 from models.user import User
 from services.notification_service import notify_post_owner_of_comment, notify_post_owner_of_like
 from schemas.blog import (
@@ -55,7 +55,63 @@ from schemas.blog import (
 logger = logging.getLogger("blog")
 
 router = APIRouter(tags=["Blog"])
+VALID_PUBLISH_OPTIONS = {"publish", "draft", "schedule"}
 
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _parse_scheduled_at(raw: Optional[str]) -> Optional[datetime]:
+    """Parse an ISO 8601 string into naive UTC. Empty/None -> None."""
+    if raw is None or not raw.strip():
+        return None
+    try:
+        dt = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="scheduled_at must be an ISO 8601 datetime, e.g. 2026-03-20T10:00:00",
+        )
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
+def _resolve_publish_state(option: Optional[str], scheduled_at: Optional[datetime]):
+    """
+    Validate the author's choice and return (status, scheduled_at).
+
+      - scheduled_at null / no option  -> publish immediately
+      - scheduled_at in the future     -> scheduled
+      - draft                          -> must NOT have scheduled_at
+      - scheduled_at must be in the future
+    """
+    if option is not None and option not in VALID_PUBLISH_OPTIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="publish_option must be one of: publish, draft, schedule",
+        )
+
+    if option is None:
+        option = "schedule" if scheduled_at is not None else "publish"
+
+    if option == "draft":
+        if scheduled_at is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Draft posts cannot have scheduled_at set")
+        return POST_DRAFT, None
+
+    if option == "publish":
+        if scheduled_at is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Publish Now cannot be combined with scheduled_at")
+        return POST_PUBLISHED, None
+
+    # option == "schedule"
+    if scheduled_at is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="scheduled_at is required to schedule a post")
+    if scheduled_at <= _utcnow():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="scheduled_at must be a future date and time")
+    return POST_SCHEDULED, scheduled_at
 
 def _serialize_post(db: Session, post: Post) -> PostOut:
     like_count = (
@@ -83,6 +139,9 @@ def _serialize_post(db: Session, post: Post) -> PostOut:
         like_count=like_count,
         comment_count=comment_count,
         views=post.views or 0,
+        status=post.status,
+        scheduled_at=post.scheduled_at,
+        published_at=post.published_at,
     )
 
     return out
@@ -94,16 +153,27 @@ def _serialize_post(db: Session, post: Post) -> PostOut:
 def create_post(
     title: str = Form(..., min_length=1, max_length=200),
     content: str = Form(..., min_length=1),
+    publish_option: Optional[str] = Form(None),   # "publish" | "draft" | "schedule"
+    scheduled_at: Optional[str] = Form(None),     # ISO 8601, e.g. 2026-03-20T10:00:00
     images: List[UploadFile] = File(default=[]),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     enforce_post_limit(db, current_user)
 
+    new_status, new_scheduled_at = _resolve_publish_state(publish_option, _parse_scheduled_at(scheduled_at))
+
     uploaded = [f for f in images if f is not None and f.filename]
     enforce_image_limit(db, current_user, len(uploaded))
 
-    post = Post(title=title, content=content, author_id=current_user.id)
+    post = Post(
+        title=title,
+        content=content,
+        author_id=current_user.id,
+        status=new_status,
+        scheduled_at=new_scheduled_at,
+        published_at=_utcnow() if new_status == POST_PUBLISHED else None,
+    )
     db.add(post)
     db.flush()  # assigns post.id without committing, so PostImage rows can reference it
 
@@ -128,7 +198,7 @@ def list_posts(
     db: Session = Depends(get_db),
 ):
     """Public — anyone can view all posts, no auth required. Supports pagination and search together."""
-    query = db.query(Post)
+    query = db.query(Post).filter(Post.status == POST_PUBLISHED)
 
     if search:
         like_pattern = f"%{search}%"
@@ -138,7 +208,7 @@ def list_posts(
     total_pages = (total + limit - 1) // limit if total > 0 else 0
 
     posts = (
-        query.order_by(Post.created_at.desc())
+        query.order_by(Post.published_at.desc())
         .offset((page - 1) * limit)
         .limit(limit)
         .all()
@@ -155,28 +225,36 @@ def list_posts(
 
 @router.get("/posts/mine", response_model=List[PostOut])
 def my_posts(
+    status_filter: Optional[str] = Query(None, alias="status", description="draft | scheduled | published"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    posts = (
-        db.query(Post)
-        .filter(Post.author_id == current_user.id)
-        .order_by(Post.created_at.desc())
-        .all()
-    )
+    query = db.query(Post).filter(Post.author_id == current_user.id)
+    if status_filter:
+        query = query.filter(Post.status == status_filter)
+    posts = query.order_by(Post.created_at.desc()).all()
     return [_serialize_post(db, p) for p in posts]
 
 
 @router.get("/posts/{post_id}", response_model=PostOut)
-def get_post(post_id: int, db: Session = Depends(get_db)):
-    """Public — anyone can view a single post. Each successful view increments the post's view counter."""
+def get_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """Published posts are public. Draft/scheduled posts are visible only to their author."""
     post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
+    if not post or post.status != POST_PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
-    post.views = (post.views or 0) + 1
-    db.commit()
-    db.refresh(post)
+    is_owner = current_user is not None and current_user.id == post.author_id
+    if post.status != POST_PUBLISHED and not is_owner:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+    if post.status == POST_PUBLISHED:
+        post.views = (post.views or 0) + 1
+        db.commit()
+        db.refresh(post)
 
     return _serialize_post(db, post)
 
@@ -186,21 +264,39 @@ def update_post(
     post_id: int,
     title: Optional[str] = Form(None, min_length=1, max_length=200),
     content: Optional[str] = Form(None, min_length=1),
+    publish_option: Optional[str] = Form(None),
+    scheduled_at: Optional[str] = Form(None),
     images: List[UploadFile] = File(default=[]),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
+    Draft / Scheduled posts can be moved between Draft, Scheduled and Published.
+    Published posts can still be edited, but cannot be unpublished or rescheduled.
+
     If `images` is provided (non-empty), it REPLACES all of the post's
-    existing images — this keeps the plan-limit check simple (count the
-    new set, not "existing + new"). Omit `images` entirely to leave the
-    post's current images untouched while editing title/content.
+    existing images. Omit `images` to leave them untouched.
     """
     post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
+    if not post or post.status != POST_PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     if post.author_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only edit your own posts")
+
+    parsed_scheduled_at = _parse_scheduled_at(scheduled_at)
+
+    if post.status == POST_PUBLISHED:
+        if publish_option not in (None, "publish") or parsed_scheduled_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Published posts cannot be unpublished or rescheduled",
+            )
+    elif publish_option is not None or parsed_scheduled_at is not None:
+        new_status, new_scheduled_at = _resolve_publish_state(publish_option, parsed_scheduled_at)
+        if new_status == POST_PUBLISHED:
+            post.published_at = _utcnow()
+        post.status = new_status
+        post.scheduled_at = new_scheduled_at
 
     if title is not None:
         post.title = title
@@ -235,7 +331,7 @@ def delete_post(
     db: Session = Depends(get_db),
 ):
     post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
+    if not post or post.status != POST_PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     if post.author_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only delete your own posts")
@@ -258,7 +354,7 @@ def add_comment(
     db: Session = Depends(get_db),
 ):
     post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
+    if not post or post.status != POST_PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
     enforce_comment_limit(db, current_user)
@@ -279,7 +375,7 @@ def add_comment(
 def list_comments(post_id: int, db: Session = Depends(get_db)):
     """Public — anyone can view comments."""
     post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
+    if not post or post.status != POST_PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
     comments = (
@@ -331,7 +427,7 @@ def like_post(
     db: Session = Depends(get_db),
 ):
     post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
+    if not post or post.status != POST_PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
     existing = (

@@ -64,3 +64,19 @@ export const likePost = (postId) =>
 export const unlikePost = (postId) =>
   apiClient
     .delete(`/posts/${postId}/like`);
+
+
+// PUT /posts/{id} — multipart, same as createPost. Author only.
+export const updatePost = (postId, formData) =>
+  apiClient
+    .put(`/posts/${postId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((r) => r.data);
+
+// GET /posts/mine — all of the current user's posts (draft, scheduled, published).
+// Optional status: "draft" | "scheduled" | "published"
+export const listMyPosts = (status) =>
+  apiClient
+    .get("/posts/mine", { params: status ? { status } : {} })
+    .then((r) => r.data);

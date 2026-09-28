@@ -8,7 +8,10 @@ Run with: uvicorn main:app --reload
 """
 
 import logging
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
+from core.scheduler import scheduler_loop
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,10 +25,21 @@ from routes import admin_returns, auth, blog, cart, checkout, dashboard, notific
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(scheduler_loop())
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="Day 1: Project setup, authentication, and role-based access control.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

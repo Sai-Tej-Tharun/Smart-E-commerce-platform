@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPost } from "../api/posts";
+import PublishOptions, { appendPublishFields, submitLabel, validatePublish } from "../components/PublishOptions";
 
 export default function CreatePost() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export default function CreatePost() {
   const [images, setImages] = useState([]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [publish, setPublish] = useState({ option: "publish", date: "", time: "" });
 
   const handleFileChange = (e) => setImages(Array.from(e.target.files));
 
@@ -21,15 +23,25 @@ export default function CreatePost() {
       return;
     }
 
+    const publishError = validatePublish(publish);
+    if (publishError) {
+      setError(publishError);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
+    appendPublishFields(formData, publish);
     images.forEach((file) => formData.append("images", file));
 
     setSubmitting(true);
     try {
       const post = await createPost(formData);
-      navigate(`/dashboard`, { replace: true, state: { createdPostId: post.id } });
+      navigate(post.status === "published" ? "/dashboard" : "/my-posts", {
+        replace: true,
+        state: { createdPostId: post.id },
+      });
     } catch (err) {
       setError(err?.response?.data?.detail || "Could not create the post. Please try again.");
     } finally {
@@ -96,11 +108,11 @@ export default function CreatePost() {
                 </p>
               )}
             </div>
-
+            <PublishOptions value={publish} onChange={setPublish} />
             {error && <span className="auth-error" role="alert">{error}</span>}
 
             <button type="submit" className="auth-submit" disabled={submitting}>
-              {submitting ? "Publishing..." : "Publish Post"}
+              {submitLabel(publish.option, submitting)}
             </button>
           </form>
         </div>
